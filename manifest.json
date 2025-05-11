@@ -2,7 +2,7 @@
   "name": "O'Connor Garden Guide",
   "short_name": "Garden Guide",
   "description": "Your personal assistant for garden planning and maintenance",
-  "start_url": "./index-modular.html",
+  "start_url": "./",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#4CAF50",

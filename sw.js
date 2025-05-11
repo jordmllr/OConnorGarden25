@@ -16,7 +16,6 @@ const CACHE_NAMES = {
 const APP_SHELL_RESOURCES = [
   './',
   'index.html',
-  'index-modular.html',
   'shell.css',
   'shell.js',
   'manifest.json',
@@ -28,7 +27,6 @@ const APP_SHELL_RESOURCES = [
 const STATIC_ASSETS = [
   'styles.css',
   'app.js',
-  'app-modular.js',
   'auth.js',
   'plot-manager.js',
   'task-manager.js',
