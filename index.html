@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>O'Connor Garden Guide</title>
+    <meta name="description" content="Garden plant information guide">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" href="icons/favicon.svg" type="image/svg+xml">
+    <meta name="theme-color" content="#4CAF50">
+
+    <!-- Alpine.js -->
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+    <!-- Markdown parser -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+    <!-- Basic styles -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div x-data="plantGuide()" class="container">
+        <header>
+            <h1>O'Connor Garden Guide</h1>
+        </header>
+
+        <main>
+            <div class="plant-selector">
+                <h2>Select a Plant</h2>
+                <div class="plant-grid">
+                    <button @click="selectPlant('Tomatoes')" class="plant-button">
+                        <span class="emoji">🍅</span>
+                        <span class="name">Tomatoes</span>
+                    </button>
+                    <button @click="selectPlant('Cucumbers')" class="plant-button">
+                        <span class="emoji">🥒</span>
+                        <span class="name">Cucumbers</span>
+                    </button>
+                    <button @click="selectPlant('Pumpkins')" class="plant-button">
+                        <span class="emoji">🎃</span>
+                        <span class="name">Pumpkins</span>
+                    </button>
+                    <button @click="selectPlant('Onions')" class="plant-button">
+                        <span class="emoji">🧅</span>
+                        <span class="name">Onions</span>
+                    </button>
+                    <button @click="selectPlant('Romaine')" class="plant-button">
+                        <span class="emoji">🥬</span>
+                        <span class="name">Romaine</span>
+                    </button>
+                    <button @click="selectPlant('SweetPotatoes')" class="plant-button">
+                        <span class="emoji">🍠</span>
+                        <span class="name">Sweet Potatoes</span>
+                    </button>
+                </div>
+            </div>
+
+            <div x-show="selectedPlant" class="plant-info">
+                <button @click="selectedPlant = null" class="back-button">← Back to Plants</button>
+                <div x-html="plantContent" class="markdown-content"></div>
+            </div>
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        // Register service worker for PWA
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(reg => console.log('Service worker registered'))
+                    .catch(err => console.log('Service worker registration failed', err));
+            });
+        }
+    </script>
+</body>
+</html>

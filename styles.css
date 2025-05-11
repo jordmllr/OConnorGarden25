@@ -1,0 +1,170 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    line-height: 1.6;
+    color: #333;
+    background-color: #f5f5f5;
+}
+
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 1rem;
+}
+
+header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+h1 {
+    color: #2e7d32;
+    margin-bottom: 1rem;
+}
+
+h2 {
+    margin-bottom: 1.5rem;
+    color: #2e7d32;
+    text-align: center;
+}
+
+.plant-selector {
+    background-color: white;
+    border-radius: 8px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    margin-bottom: 1rem;
+}
+
+.plant-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+}
+
+.plant-button {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem 1rem;
+    background-color: #e8f5e9;
+    border: 1px solid #a5d6a7;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.plant-button:hover, .plant-button:focus {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.plant-button .emoji {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+}
+
+.plant-button .name {
+    font-weight: bold;
+}
+
+.plant-info {
+    background-color: white;
+    border-radius: 8px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.back-button {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    margin-bottom: 1rem;
+    background-color: #e8f5e9;
+    border: 1px solid #a5d6a7;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.loading {
+    text-align: center;
+    padding: 2rem;
+    color: #757575;
+}
+
+.error {
+    color: #d32f2f;
+    padding: 1rem;
+    border: 1px solid #ffcdd2;
+    border-radius: 4px;
+    background-color: #ffebee;
+}
+
+/* Markdown content styling */
+.markdown-content {
+    padding: 0 0.5rem;
+}
+
+.markdown-content h1 {
+    font-size: 1.8rem;
+    margin-bottom: 1rem;
+}
+
+.markdown-content h2 {
+    font-size: 1.5rem;
+    margin-top: 1.5rem;
+    margin-bottom: 1rem;
+    text-align: left;
+}
+
+.markdown-content h3 {
+    font-size: 1.2rem;
+    margin-top: 1.2rem;
+    margin-bottom: 0.8rem;
+}
+
+.markdown-content p {
+    margin-bottom: 1rem;
+}
+
+.markdown-content ul, .markdown-content ol {
+    margin-bottom: 1rem;
+    padding-left: 1.5rem;
+}
+
+.markdown-content li {
+    margin-bottom: 0.5rem;
+}
+
+.markdown-content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 1rem;
+}
+
+.markdown-content th, .markdown-content td {
+    border: 1px solid #ddd;
+    padding: 0.5rem;
+}
+
+.markdown-content th {
+    background-color: #f1f8e9;
+}
+
+.markdown-content hr {
+    margin: 1.5rem 0;
+    border: none;
+    border-top: 1px solid #e0e0e0;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+    .plant-grid {
+        grid-template-columns: 1fr;
+    }
+}
