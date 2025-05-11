@@ -1,223 +1,158 @@
-function plantGuide() {
-    const app = {
-        // Navigation state
-        currentView: 'plants', // Default view
+/**
+ * Garden Guide App - Modular Version
+ * Main application entry point
+ */
 
-        // Plant guide data
-        selectedPlant: null,
-        plantContent: '',
+// Import services
+import authService from './services/auth-service.js';
+import dataService from './services/data-service.js';
+import syncService from './services/sync-service.js';
+import notificationService from './services/notification-service.js';
 
-        // Todo list properties
-        todos: [],
-        newTodoText: '',
+// Import modules
+import plantList from './modules/plants/plant-list.js';
+import plantDetail from './modules/plants/plant-detail.js';
+import plotManager from './modules/plot/plot-manager.js';
+import taskManager from './modules/tasks/task-manager.js';
 
+// Main app component
+function gardenApp() {
+    return {
+        // App state
+        currentView: 'dashboard', // Default view
+        isInitialized: false,
+        isLoading: true,
+        error: null,
+        
         // Initialize the app
-        init() {
-            // Make the app instance available globally for auth.js
-            window.todoApp = this;
-
-            // If user is already authenticated, load todos
-            const user = Alpine.store('auth').user || firebase.auth().currentUser;
-            if (user) {
-                console.log('App initialized with user:', user.email);
-                this.loadTodos();
-            } else {
-                console.log('App initialized without user');
-            }
-        },
-
-        // Todo list methods with Firestore
-        async loadTodos() {
-            const user = Alpine.store('auth').user || firebase.auth().currentUser;
-            if (!user) {
-                console.log('Cannot load todos: No user logged in');
-                return;
-            }
-
-            console.log('Loading todos for user:', user.email, 'with UID:', user.uid);
-
+        async init() {
+            console.log('Initializing Garden Guide App...');
+            this.isLoading = true;
+            
             try {
-                // Get todos for the current user
-                const snapshot = await db.collection('users').doc(user.uid).collection('todos').get();
-                console.log('Firestore query completed. Found', snapshot.docs.length, 'todos');
-
-                this.todos = snapshot.docs.map(doc => ({
-                    id: doc.id,
-                    ...doc.data()
-                }));
-
-                console.log('Todos loaded successfully:', this.todos);
+                // Initialize services
+                await this._initializeServices();
+                
+                // Set up event listeners
+                this._setupEventListeners();
+                
+                // Check authentication state
+                const user = authService.getCurrentUser();
+                if (user) {
+                    console.log('User is authenticated:', user.email);
+                } else {
+                    console.log('No authenticated user');
+                    this.currentView = 'login';
+                }
+                
+                this.isInitialized = true;
+                this.isLoading = false;
+                console.log('App initialization complete');
             } catch (error) {
-                console.error('Error loading todos:', error);
+                console.error('Error initializing app:', error);
+                this.error = 'Failed to initialize the application. Please refresh the page.';
+                this.isLoading = false;
             }
         },
-
-        async addTodo() {
-            if (this.newTodoText.trim() === '') return;
-
-            const user = Alpine.store('auth').user || firebase.auth().currentUser;
-            if (!user) {
-                console.log('Cannot add todo: No user logged in');
-                return;
-            }
-
-            console.log('Adding todo for user:', user.email);
-
+        
+        /**
+         * Initialize all services
+         * @private
+         */
+        async _initializeServices() {
             try {
-                // Create todo data
-                const todoData = {
-                    text: this.newTodoText,
-                    completed: false,
-                    dueDate: null,
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                };
-
-                console.log('Todo data to be added:', todoData);
-
-                // Add to Firestore
-                const docRef = await db.collection('users').doc(user.uid).collection('todos').add(todoData);
-                console.log('Todo added to Firestore with ID:', docRef.id);
-
-                // Add to local state
-                this.todos.push({
-                    id: docRef.id,
-                    ...todoData,
-                    createdAt: new Date() // Use local date until server timestamp syncs
-                });
-
-                this.newTodoText = '';
-                console.log('Todo added successfully');
+                // Initialize auth service
+                await authService.init();
+                console.log('Auth service initialized');
+                
+                // Initialize data service
+                await dataService.init();
+                console.log('Data service initialized');
+                
+                // Initialize sync service
+                await syncService.init();
+                console.log('Sync service initialized');
+                
+                // Initialize notification service
+                await notificationService.init();
+                console.log('Notification service initialized');
             } catch (error) {
-                console.error('Error adding todo:', error);
+                console.error('Error initializing services:', error);
+                throw error;
             }
         },
-
-        async removeTodo(id) {
-            const user = Alpine.store('auth').user || firebase.auth().currentUser;
-            if (!user) {
-                console.log('Cannot remove todo: No user logged in');
-                return;
-            }
-
-            console.log('Removing todo with ID:', id);
-
-            try {
-                // Remove from Firestore
-                await db.collection('users').doc(user.uid).collection('todos').doc(id).delete();
-                console.log('Todo removed from Firestore');
-
-                // Remove from local state
-                this.todos = this.todos.filter(todo => todo.id !== id);
-                console.log('Todo removed from local state');
-            } catch (error) {
-                console.error('Error removing todo:', error);
-            }
+        
+        /**
+         * Set up event listeners
+         * @private
+         */
+        _setupEventListeners() {
+            // Listen for auth state changes
+            authService.addAuthStateListener(user => {
+                if (user) {
+                    console.log('User signed in:', user.email);
+                    if (this.currentView === 'login') {
+                        this.navigateTo('dashboard');
+                    }
+                } else {
+                    console.log('User signed out');
+                    this.navigateTo('login');
+                }
+            });
         },
-
-        async toggleTodo(id) {
-            const user = Alpine.store('auth').user || firebase.auth().currentUser;
-            if (!user) {
-                console.log('Cannot toggle todo: No user logged in');
-                return;
-            }
-
-            const todo = this.todos.find(todo => todo.id === id);
-            if (!todo) {
-                console.log('Todo not found with ID:', id);
-                return;
-            }
-
-            console.log('Toggling todo with ID:', id);
-
-            try {
-                // Update in Firestore
-                await db.collection('users').doc(user.uid).collection('todos').doc(id).update({
-                    completed: !todo.completed
-                });
-                console.log('Todo updated in Firestore');
-
-                // Update in local state
-                todo.completed = !todo.completed;
-                console.log('Todo updated in local state. New completed status:', todo.completed);
-            } catch (error) {
-                console.error('Error toggling todo:', error);
-            }
-        },
-
-        async setDueDate(id, date) {
-            const user = Alpine.store('auth').user || firebase.auth().currentUser;
-            if (!user) {
-                console.log('Cannot set due date: No user logged in');
-                return;
-            }
-
-            const todo = this.todos.find(todo => todo.id === id);
-            if (!todo) {
-                console.log('Todo not found with ID:', id);
-                return;
-            }
-
-            console.log('Setting due date for todo with ID:', id, 'to', date);
-
-            try {
-                // Update in Firestore
-                await db.collection('users').doc(user.uid).collection('todos').doc(id).update({
-                    dueDate: date ? new Date(date) : null
-                });
-                console.log('Due date updated in Firestore');
-
-                // Update in local state
-                todo.dueDate = date ? new Date(date) : null;
-                console.log('Due date updated in local state');
-            } catch (error) {
-                console.error('Error setting due date:', error);
-            }
-        },
-
-        // Switch to a specific view
+        
+        /**
+         * Navigate to a specific view
+         * @param {string} view - View name
+         */
         navigateTo(view) {
             this.currentView = view;
-            this.selectedPlant = null; // Reset plant selection when changing views
+            
+            // Update URL hash
+            window.location.hash = view;
+            
+            // Dispatch navigation event
+            window.dispatchEvent(new CustomEvent('app-navigation', {
+                detail: { view }
+            }));
         },
-
-        // Plant selection method
-        selectPlant(plant) {
-            this.selectedPlant = plant;
-            this.loadPlantInfo(plant);
+        
+        /**
+         * Sign out the current user
+         */
+        async signOut() {
+            try {
+                await authService.signOut();
+            } catch (error) {
+                console.error('Error signing out:', error);
+                this.error = 'Failed to sign out. Please try again.';
+            }
         },
-
-        // Load plant information
-        loadPlantInfo(plant) {
-            // Show loading state
-            this.plantContent = '<div class="loading">Loading plant information...</div>';
-
-            // Fetch the markdown file
-            fetch(`data/${plant}.md`)
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Plant information not found');
-                    }
-                    return response.text();
-                })
-                .then(markdown => {
-                    // Parse markdown to HTML
-                    this.plantContent = marked.parse(markdown);
-                })
-                .catch(error => {
-                    this.plantContent = `<div class="error">
-                        <p>Sorry, we couldn't load information for ${plant}.</p>
-                        <p>${error.message}</p>
-                    </div>`;
-                });
-        },
-
-        // Plot layout data and methods
-        plotData: {
-            width: 10,
-            height: 20,
-            // Add more plot-specific data as needed
+        
+        /**
+         * Check if a view is active
+         * @param {string} view - View name
+         * @returns {boolean} - Whether the view is active
+         */
+        isViewActive(view) {
+            return this.currentView === view;
         }
     };
-
-    return app;
 }
+
+// Register Alpine components
+document.addEventListener('alpine:init', () => {
+    // Register main app
+    Alpine.data('gardenApp', gardenApp);
+    
+    // Register module components
+    Alpine.data('plantList', plantList);
+    Alpine.data('plantDetail', plantDetail);
+    Alpine.data('plotManager', plotManager);
+    Alpine.data('taskManager', taskManager);
+});
+
+// Initialize the app when the DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM loaded, waiting for Alpine to initialize components');
+});
