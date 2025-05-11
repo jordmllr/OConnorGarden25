@@ -29,7 +29,7 @@
 </head>
 <body>
     <!-- Authentication UI -->
-    <div x-data="authHandler()" x-init="init()" class="auth-container" x-show="!user">
+    <div x-data="authHandler()" x-init="init()" class="auth-container" x-show="!$store.auth.user">
         <div class="auth-form">
             <h2>Sign In to Sync Your Garden Tasks</h2>
 
@@ -58,13 +58,13 @@
         </div>
     </div>
 
-    <div x-data="plantGuide()" x-init="init()" class="container" x-show="true">
+    <div x-data="plantGuide()" x-init="init()" class="container" x-show="$store.auth.user">
         <header>
             <h1>O'Connor Garden Guide</h1>
 
             <!-- User info and sign out button -->
-            <div class="user-info" x-data="authHandler()" x-show="user">
-                <span x-text="user ? 'Signed in as: ' + user.email : ''"></span>
+            <div class="user-info" x-data="authHandler()" x-show="$store.auth.user">
+                <span x-text="$store.auth.user ? 'Signed in as: ' + $store.auth.user.email : ''"></span>
                 <button @click="signOut()" class="sign-out-btn">Sign Out</button>
             </div>
 
@@ -431,6 +431,7 @@
     <script src="task-manager.js"></script>
     <script src="app.js"></script>
     <script src="db-setup.js"></script>
+    <script src="firebase-test.js"></script>
     <script>
         // Register service worker for PWA
         if ('serviceWorker' in navigator) {
