@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Convert SVG to PNG</title>
+</head>
+<body>
+    <h1>SVG to PNG Converter</h1>
+    <p>This tool will convert your SVG icons to PNG format for better PWA compatibility.</p>
+    
+    <div>
+        <h2>Converting icons...</h2>
+        <div id="status">Processing...</div>
+    </div>
+
+    <script>
+        // Function to convert SVG to PNG
+        function convertSvgToPng(svgUrl, size) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = size;
+                    canvas.height = size;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, size, size);
+                    
+                    // Convert to blob
+                    canvas.toBlob(blob => {
+                        const url = URL.createObjectURL(blob);
+                        resolve({
+                            url,
+                            blob,
+                            size
+                        });
+                    }, 'image/png');
+                };
+                img.onerror = reject;
+                img.src = svgUrl;
+            });
+        }
+
+        // Process all icons
+        async function processIcons() {
+            const statusEl = document.getElementById('status');
+            const icons = [
+                { src: 'icons/favicon.svg', sizes: [32, 64] },
+                { src: 'icons/icon-192.svg', sizes: [192] },
+                { src: 'icons/icon-512.svg', sizes: [512] }
+            ];
+
+            statusEl.textContent = 'Starting conversion...';
+            
+            for (const icon of icons) {
+                for (const size of icon.sizes) {
+                    try {
+                        statusEl.textContent = `Converting ${icon.src} to ${size}x${size} PNG...`;
+                        const result = await convertSvgToPng(icon.src, size);
+                        
+                        // Create download link
+                        const a = document.createElement('a');
+                        a.href = result.url;
+                        a.download = `icon-${size}.png`;
+                        a.textContent = `Download ${size}x${size} PNG`;
+                        a.style.display = 'block';
+                        a.style.margin = '10px 0';
+                        document.body.appendChild(a);
+                        
+                        // Auto-click to download
+                        a.click();
+                    } catch (error) {
+                        statusEl.textContent += `\nError converting ${icon.src}: ${error.message}`;
+                    }
+                }
+            }
+            
+            statusEl.textContent = 'Conversion complete! Please save the downloaded PNG files to your icons folder.';
+        }
+
+        // Start processing when page loads
+        window.onload = processIcons;
+    </script>
+</body>
+</html>
