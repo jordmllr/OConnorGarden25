@@ -113,7 +113,7 @@
 
                         <div x-show="error" class="error-message" x-text="error"></div>
 
-                        <form @submit.prevent="authService.signIn(email, password).catch(err => error = err.message)">
+                        <form @submit.prevent="authService.signInWithEmail(email, password).catch(err => error = err.message)">
                             <div class="form-group">
                                 <label for="email">Email</label>
                                 <input type="email" id="email" x-model="email" required>
@@ -141,7 +141,7 @@
 
                         <div x-show="error" class="error-message" x-text="error"></div>
 
-                        <form @submit.prevent="password === confirmPassword ? authService.register(email, password).catch(err => error = err.message) : error = 'Passwords do not match'">
+                        <form @submit.prevent="password === confirmPassword ? authService.signUpWithEmail(email, password).catch(err => error = err.message) : error = 'Passwords do not match'">
                             <div class="form-group">
                                 <label for="reg-email">Email</label>
                                 <input type="email" id="reg-email" x-model="email" required>
@@ -246,31 +246,8 @@
         </div>
     </div>
 
-    <!-- App scripts -->
-    <script src="services/auth-service.js" type="module"></script>
-    <script src="services/indexed-db-service.js" type="module"></script>
-    <script src="services/data-service.js" type="module"></script>
-    <script src="services/sync-service.js" type="module"></script>
-    <script src="services/notification-service.js" type="module"></script>
-
-    <!-- Module scripts -->
-    <script src="modules/plants/plant-model.js" type="module"></script>
-    <script src="modules/plants/plant-service.js" type="module"></script>
-    <script src="modules/plants/plant-list.js" type="module"></script>
-    <script src="modules/plants/plant-detail.js" type="module"></script>
-
-    <script src="modules/plot/plot-model.js" type="module"></script>
-    <script src="modules/plot/plot-service.js" type="module"></script>
-    <script src="modules/plot/planting-service.js" type="module"></script>
-    <script src="modules/plot/plot-manager.js" type="module"></script>
-
-    <script src="modules/tasks/task-model.js" type="module"></script>
-    <script src="modules/tasks/task-service.js" type="module"></script>
-    <script src="modules/tasks/task-scheduler.js" type="module"></script>
-    <script src="modules/tasks/task-manager.js" type="module"></script>
-
-    <!-- Main app script -->
-    <script src="app.js" type="module"></script>
+    <!-- Main app script (non-modular version for GitHub Pages) -->
+    <script src="app-global.js"></script>
 
     <!-- Service worker registration -->
     <script>
