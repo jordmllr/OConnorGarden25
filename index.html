@@ -28,9 +28,45 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div x-data="plantGuide()" class="container">
+    <!-- Authentication UI -->
+    <div x-data="authHandler()" x-init="init()" class="auth-container" x-show="!user">
+        <div class="auth-form">
+            <h2>Sign In to Sync Your Garden Tasks</h2>
+
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" x-model="email" placeholder="your@email.com">
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" x-model="password" placeholder="Your password">
+            </div>
+
+            <div class="error-message" x-show="errorMessage" x-text="errorMessage"></div>
+
+            <div class="auth-buttons">
+                <button @click="signIn()" :disabled="isLoading">Sign In</button>
+                <button @click="signUp()" :disabled="isLoading">Sign Up</button>
+            </div>
+
+            <div class="google-signin">
+                <button @click="signInWithGoogle()">
+                    <img src="https://developers.google.com/identity/images/btn_google_signin_light_normal_web.png" alt="Sign in with Google">
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div x-data="plantGuide()" x-init="init()" class="container" x-show="true">
         <header>
             <h1>O'Connor Garden Guide</h1>
+
+            <!-- User info and sign out button -->
+            <div class="user-info" x-data="authHandler()" x-show="user">
+                <span x-text="user ? 'Signed in as: ' + user.email : ''"></span>
+                <button @click="signOut()" class="sign-out-btn">Sign Out</button>
+            </div>
 
             <!-- Navigation Menu -->
             <nav class="main-nav">
@@ -45,6 +81,10 @@
                 <button @click="navigateTo('schedule')" :class="{ active: currentView === 'schedule' }">
                     <span class="emoji">📅</span>
                     <span class="name">Planting Schedule</span>
+                </button>
+                <button @click="navigateTo('todos')" :class="{ active: currentView === 'todos' }">
+                    <span class="emoji">✅</span>
+                    <span class="name">Todo List</span>
                 </button>
             </nav>
         </header>
@@ -89,12 +129,67 @@
             </div>
 
             <!-- Plot Layout Template -->
-            <div x-show="currentView === 'plot'" class="plot-layout">
+            <div x-show="currentView === 'plot'" x-data="plotManager()" x-init="init()" class="plot-layout">
                 <h2>Garden Plot Layout</h2>
-                <div class="plot-container">
-                    <div class="plot-grid">
-                        <!-- Grid will be created here -->
-                        <p>10' x 20' garden plot with 1' grid lines</p>
+
+                <div x-show="isLoading" class="loading">Loading plot data...</div>
+
+                <div x-show="!isLoading" class="plot-tools">
+                    <h3>Select a Plant to Place</h3>
+                    <div class="plant-selector-grid">
+                        <template x-for="plant in plants" :key="plant.id">
+                            <button
+                                @click="selectPlant(plant.id)"
+                                :class="{ 'selected': selectedPlant === plant.id }"
+                                class="plant-select-btn"
+                            >
+                                <span class="emoji" x-text="plant.emoji"></span>
+                                <span class="name" x-text="plant.name"></span>
+                            </button>
+                        </template>
+
+                        <button @click="selectPlant(null)" class="plant-select-btn clear-btn">
+                            <span class="emoji">❌</span>
+                            <span class="name">Clear Cell</span>
+                        </button>
+                    </div>
+
+                    <div class="plot-info">
+                        <p><strong>Plot Name:</strong> <span x-text="plotName"></span></p>
+                        <p><strong>Dimensions:</strong> <span x-text="plotWidth + ' ft × ' + plotHeight + ' ft'"></span></p>
+                    </div>
+                </div>
+
+                <div x-show="!isLoading" class="plot-container">
+                    <div class="plot-grid" :style="'width: ' + (plotWidth * 100) + 'px; height: ' + (plotHeight * 50) + 'px;'">
+                        <!-- Grid cells will be created here -->
+                        <template x-for="cell in cells" :key="cell.id">
+                            <div
+                                :id="cell.id"
+                                class="grid-cell"
+                                :class="{ 'planted': cell.status === 'planted' }"
+                                :style="'left: ' + (cell.x * cellSize) + 'px; top: ' + (cell.y * cellSize) + 'px; width: ' + cellSize + 'px; height: ' + cellSize + 'px;'"
+                                @click="selectedPlant === null ? clearCell(cell.id) : plantInCell(cell.id)"
+                            >
+                                <template x-if="cell.plantId">
+                                    <div class="plant-indicator">
+                                        <span class="plant-emoji" x-text="getPlant(cell.plantId)?.emoji || '🌱'"></span>
+                                    </div>
+                                </template>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
+                <div x-show="!isLoading" class="plot-legend">
+                    <h3>Legend</h3>
+                    <div class="legend-items">
+                        <template x-for="plant in plants" :key="plant.id">
+                            <div class="legend-item">
+                                <span class="emoji" x-text="plant.emoji"></span>
+                                <span class="name" x-text="plant.name"></span>
+                            </div>
+                        </template>
                     </div>
                 </div>
             </div>
@@ -104,10 +199,238 @@
                 <h2>Planting Schedule</h2>
                 <p>Planting schedule will be implemented here.</p>
             </div>
+
+            <!-- Todo List Template -->
+            <div x-show="currentView === 'todos'" x-data="taskManager()" x-init="init()" class="todo-list">
+                <h2>Garden Tasks</h2>
+
+                <div x-show="isLoading" class="loading">Loading tasks...</div>
+
+                <div x-show="!isLoading">
+                    <!-- Task filters -->
+                    <div class="task-filters">
+                        <div class="filter-group">
+                            <label for="status-filter">Status:</label>
+                            <select id="status-filter" x-model="filterStatus" class="filter-select">
+                                <option value="all">All</option>
+                                <option value="pending">Pending</option>
+                                <option value="completed">Completed</option>
+                            </select>
+                        </div>
+
+                        <div class="filter-group">
+                            <label for="category-filter">Category:</label>
+                            <select id="category-filter" x-model="filterCategory" class="filter-select">
+                                <option value="all">All Categories</option>
+                                <template x-for="category in categories" :key="category">
+                                    <option :value="category" x-text="category.charAt(0).toUpperCase() + category.slice(1)"></option>
+                                </template>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Add new task form -->
+                    <form @submit.prevent="addTask({
+                        title: $refs.newTaskTitle.value,
+                        description: '',
+                        dueDate: $refs.newTaskDueDate.value || new Date(),
+                        category: $refs.newTaskCategory.value
+                    })" class="task-form">
+                        <div class="task-form-inputs">
+                            <input
+                                type="text"
+                                x-ref="newTaskTitle"
+                                placeholder="Add a new garden task..."
+                                class="task-input"
+                                required
+                            >
+                            <select x-ref="newTaskCategory" class="task-category-select">
+                                <template x-for="category in categories" :key="category">
+                                    <option :value="category" x-text="category.charAt(0).toUpperCase() + category.slice(1)"></option>
+                                </template>
+                            </select>
+                            <input
+                                type="date"
+                                x-ref="newTaskDueDate"
+                                class="task-date-input"
+                            >
+                        </div>
+                        <button type="submit" class="add-task-btn">Add Task</button>
+                    </form>
+
+                    <!-- Task list -->
+                    <ul class="tasks-container">
+                        <template x-for="task in getFilteredTasks()" :key="task.id">
+                            <li class="task-item" :class="{ 'completed': task.completed }">
+                                <div class="task-content">
+                                    <input
+                                        type="checkbox"
+                                        :checked="task.completed"
+                                        @click="toggleTaskCompletion(task.id)"
+                                    >
+                                    <div class="task-details">
+                                        <div class="task-title-row">
+                                            <span class="task-title" x-text="task.title"></span>
+                                            <span class="task-category" x-text="task.category"></span>
+                                        </div>
+
+                                        <div class="task-meta">
+                                            <!-- Due date display -->
+                                            <span class="due-date" x-text="'Due: ' + formatDate(task.dueDate)"></span>
+
+                                            <!-- Related planting (if any) -->
+                                            <template x-if="task.relatedPlantingId">
+                                                <span class="related-planting" x-text="'Plant: ' + (getPlanting(task.relatedPlantingId)?.plantName || 'Unknown')"></span>
+                                            </template>
+
+                                            <!-- Recurring indicator -->
+                                            <template x-if="task.recurring">
+                                                <span class="recurring-indicator">🔄 Recurring</span>
+                                            </template>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="task-actions">
+                                    <!-- Edit button -->
+                                    <button @click="$refs['edit-modal-' + task.id].showModal()" class="edit-task-btn">
+                                        ✏️
+                                    </button>
+
+                                    <!-- Delete button -->
+                                    <button @click="deleteTask(task.id)" class="delete-task-btn">
+                                        ❌
+                                    </button>
+                                </div>
+
+                                <!-- Edit task dialog -->
+                                <dialog :id="'edit-task-' + task.id" x-ref="'edit-modal-' + task.id" class="edit-task-dialog">
+                                    <form @submit.prevent="
+                                        updateTask(task.id, {
+                                            title: $refs['edit-title-' + task.id].value,
+                                            description: $refs['edit-desc-' + task.id].value,
+                                            dueDate: new Date($refs['edit-date-' + task.id].value),
+                                            category: $refs['edit-category-' + task.id].value,
+                                            priority: $refs['edit-priority-' + task.id].value
+                                        });
+                                        $refs['edit-modal-' + task.id].close();
+                                    ">
+                                        <h3>Edit Task</h3>
+
+                                        <div class="form-group">
+                                            <label :for="'edit-title-' + task.id">Title</label>
+                                            <input
+                                                :id="'edit-title-' + task.id"
+                                                x-ref="'edit-title-' + task.id"
+                                                type="text"
+                                                :value="task.title"
+                                                required
+                                            >
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label :for="'edit-desc-' + task.id">Description</label>
+                                            <textarea
+                                                :id="'edit-desc-' + task.id"
+                                                x-ref="'edit-desc-' + task.id"
+                                                :value="task.description"
+                                            ></textarea>
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label :for="'edit-date-' + task.id">Due Date</label>
+                                            <input
+                                                :id="'edit-date-' + task.id"
+                                                x-ref="'edit-date-' + task.id"
+                                                type="date"
+                                                :value="task.dueDate ? new Date(task.dueDate).toISOString().split('T')[0] : ''"
+                                            >
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label :for="'edit-category-' + task.id">Category</label>
+                                            <select :id="'edit-category-' + task.id" x-ref="'edit-category-' + task.id">
+                                                <template x-for="category in categories" :key="category">
+                                                    <option
+                                                        :value="category"
+                                                        :selected="category === task.category"
+                                                        x-text="category.charAt(0).toUpperCase() + category.slice(1)"
+                                                    ></option>
+                                                </template>
+                                            </select>
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label :for="'edit-priority-' + task.id">Priority</label>
+                                            <select :id="'edit-priority-' + task.id" x-ref="'edit-priority-' + task.id">
+                                                <option value="low" :selected="task.priority === 'low'">Low</option>
+                                                <option value="medium" :selected="task.priority === 'medium'">Medium</option>
+                                                <option value="high" :selected="task.priority === 'high'">High</option>
+                                            </select>
+                                        </div>
+
+                                        <div class="dialog-buttons">
+                                            <button type="button" @click="$refs['edit-modal-' + task.id].close()">Cancel</button>
+                                            <button type="submit">Save Changes</button>
+                                        </div>
+                                    </form>
+                                </dialog>
+                            </li>
+                        </template>
+
+                        <!-- Empty state -->
+                        <li x-show="getFilteredTasks().length === 0" class="empty-state">
+                            No garden tasks found. Add some tasks to get started!
+                        </li>
+                    </ul>
+                </div>
+            </div>
         </main>
     </div>
 
+    <!-- Firebase App (the core Firebase SDK) -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+
+    <!-- Add Firebase products that you want to use -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
+    <!-- Initialize Firebase -->
+    <script>
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyC3rUx7OFR7-Clnwlm2Ir8Om133xRzbCg4",
+            authDomain: "gardenplot-63938.firebaseapp.com",
+            projectId: "gardenplot-63938",
+            storageBucket: "gardenplot-63938.firebasestorage.app",
+            messagingSenderId: "1085971188380",
+            appId: "1:1085971188380:web:e1652c05a11f950fe5fb59"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+
+        // Initialize Firestore
+        const db = firebase.firestore();
+
+        // Enable offline persistence
+        db.enablePersistence()
+            .catch((err) => {
+                if (err.code == 'failed-precondition') {
+                    // Multiple tabs open, persistence can only be enabled in one tab at a time
+                    console.log('Persistence failed: Multiple tabs open');
+                } else if (err.code == 'unimplemented') {
+                    // The current browser does not support all of the features required for persistence
+                    console.log('Persistence not supported by this browser');
+                }
+            });
+    </script>
+
+    <script src="auth.js"></script>
+    <script src="plot-manager.js"></script>
+    <script src="task-manager.js"></script>
     <script src="app.js"></script>
+    <script src="db-setup.js"></script>
     <script>
         // Register service worker for PWA
         if ('serviceWorker' in navigator) {
@@ -117,6 +440,9 @@
                     .catch(err => console.log('Service worker registration failed', err));
             });
         }
+
+        // Initialize the database with plant data (uncomment to run once)
+        setupDatabase();
     </script>
 </body>
 </html>
