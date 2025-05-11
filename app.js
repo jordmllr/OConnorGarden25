@@ -23,19 +23,19 @@ function gardenApp() {
         isInitialized: false,
         isLoading: true,
         error: null,
-        
+
         // Initialize the app
         async init() {
             console.log('Initializing Garden Guide App...');
             this.isLoading = true;
-            
+
             try {
                 // Initialize services
                 await this._initializeServices();
-                
+
                 // Set up event listeners
                 this._setupEventListeners();
-                
+
                 // Check authentication state
                 const user = authService.getCurrentUser();
                 if (user) {
@@ -44,7 +44,7 @@ function gardenApp() {
                     console.log('No authenticated user');
                     this.currentView = 'login';
                 }
-                
+
                 this.isInitialized = true;
                 this.isLoading = false;
                 console.log('App initialization complete');
@@ -54,7 +54,7 @@ function gardenApp() {
                 this.isLoading = false;
             }
         },
-        
+
         /**
          * Initialize all services
          * @private
@@ -64,15 +64,15 @@ function gardenApp() {
                 // Initialize auth service
                 await authService.init();
                 console.log('Auth service initialized');
-                
+
                 // Initialize data service
                 await dataService.init();
                 console.log('Data service initialized');
-                
+
                 // Initialize sync service
                 await syncService.init();
                 console.log('Sync service initialized');
-                
+
                 // Initialize notification service
                 await notificationService.init();
                 console.log('Notification service initialized');
@@ -81,7 +81,7 @@ function gardenApp() {
                 throw error;
             }
         },
-        
+
         /**
          * Set up event listeners
          * @private
@@ -100,23 +100,23 @@ function gardenApp() {
                 }
             });
         },
-        
+
         /**
          * Navigate to a specific view
          * @param {string} view - View name
          */
         navigateTo(view) {
             this.currentView = view;
-            
+
             // Update URL hash
             window.location.hash = view;
-            
+
             // Dispatch navigation event
             window.dispatchEvent(new CustomEvent('app-navigation', {
                 detail: { view }
             }));
         },
-        
+
         /**
          * Sign out the current user
          */
@@ -128,7 +128,7 @@ function gardenApp() {
                 this.error = 'Failed to sign out. Please try again.';
             }
         },
-        
+
         /**
          * Check if a view is active
          * @param {string} view - View name
@@ -140,11 +140,43 @@ function gardenApp() {
     };
 }
 
+// Make services and functions available globally
+window.authService = authService;
+window.dataService = dataService;
+window.syncService = syncService;
+window.notificationService = notificationService;
+window.plantList = plantList;
+window.plantDetail = plantDetail;
+window.plotManager = plotManager;
+window.taskManager = taskManager;
+window.isViewActive = function(view) {
+    // This will be overridden by the component method, but provides a global fallback
+    if (window.Alpine && Alpine.store('app')) {
+        return Alpine.store('app').currentView === view;
+    }
+    return false;
+};
+window.init = function() {
+    console.log('Global init function called');
+    // This is a placeholder that will be overridden by component methods
+};
+window.isLoading = false;
+window.error = null;
+window.filteredTasks = [];
+window.plots = [];
+
 // Register Alpine components
 document.addEventListener('alpine:init', () => {
+    // Create an app store for global state
+    Alpine.store('app', {
+        currentView: 'dashboard',
+        isLoading: false,
+        error: null
+    });
+
     // Register main app
     Alpine.data('gardenApp', gardenApp);
-    
+
     // Register module components
     Alpine.data('plantList', plantList);
     Alpine.data('plantDetail', plantDetail);
@@ -155,4 +187,10 @@ document.addEventListener('alpine:init', () => {
 // Initialize the app when the DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
     console.log('DOM loaded, waiting for Alpine to initialize components');
+
+    // Set initial values for global variables
+    window.isLoading = false;
+    window.error = null;
+    window.filteredTasks = [];
+    window.plots = [];
 });
