@@ -24,7 +24,8 @@ A Progressive Web App (PWA) for the family garden! This app provides information
 3. Click "Install" to add it to your desktop
 
 ## Future Enhancements
-
-- [ ] Add gantt chart for planting schedule
-- [ ] Add plot layout visualization
-- [ ] Add more plant varieties
+- [ ] Add a menu to navigate to different spaces
+    - [ ] make a plot space that shows a 10'x20' grid with a grid overlay with black dashed lines every 1' and faint gray lines every inch.
+    - [ ] make a plant space that shows a list of plants with their name, type, and a button to view more information.
+    - [ ] make a to-do list space that shows a list of tasks to do for the garden.
+- [ ] Add push notifications. For now, just say "your plants need attention" every 5 minutes.

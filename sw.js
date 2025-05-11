@@ -1,4 +1,4 @@
-const CACHE_NAME = 'garden-guide-v2';
+const CACHE_NAME = 'garden-guide-v3';
 const urlsToCache = [
   './',
   'index.html',

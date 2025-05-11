@@ -31,42 +31,78 @@
     <div x-data="plantGuide()" class="container">
         <header>
             <h1>O'Connor Garden Guide</h1>
+
+            <!-- Navigation Menu -->
+            <nav class="main-nav">
+                <button @click="navigateTo('plants')" :class="{ active: currentView === 'plants' }">
+                    <span class="emoji">🌱</span>
+                    <span class="name">Plants</span>
+                </button>
+                <button @click="navigateTo('plot')" :class="{ active: currentView === 'plot' }">
+                    <span class="emoji">🏡</span>
+                    <span class="name">Plot Layout</span>
+                </button>
+                <button @click="navigateTo('schedule')" :class="{ active: currentView === 'schedule' }">
+                    <span class="emoji">📅</span>
+                    <span class="name">Planting Schedule</span>
+                </button>
+            </nav>
         </header>
 
         <main>
-            <div class="plant-selector">
-                <h2>Select a Plant</h2>
-                <div class="plant-grid">
-                    <button @click="selectPlant('Tomatoes')" class="plant-button">
-                        <span class="emoji">🍅</span>
-                        <span class="name">Tomatoes</span>
-                    </button>
-                    <button @click="selectPlant('Cucumbers')" class="plant-button">
-                        <span class="emoji">🥒</span>
-                        <span class="name">Cucumbers</span>
-                    </button>
-                    <button @click="selectPlant('Pumpkins')" class="plant-button">
-                        <span class="emoji">🎃</span>
-                        <span class="name">Pumpkins</span>
-                    </button>
-                    <button @click="selectPlant('Onions')" class="plant-button">
-                        <span class="emoji">🧅</span>
-                        <span class="name">Onions</span>
-                    </button>
-                    <button @click="selectPlant('Romaine')" class="plant-button">
-                        <span class="emoji">🥬</span>
-                        <span class="name">Romaine</span>
-                    </button>
-                    <button @click="selectPlant('SweetPotatoes')" class="plant-button">
-                        <span class="emoji">🍠</span>
-                        <span class="name">Sweet Potatoes</span>
-                    </button>
+            <!-- Plants View Template -->
+            <div x-show="currentView === 'plants'">
+                <div x-show="!selectedPlant" class="plant-selector">
+                    <h2>Select a Plant</h2>
+                    <div class="plant-grid">
+                        <button @click="selectPlant('Tomatoes')" class="plant-button">
+                            <span class="emoji">🍅</span>
+                            <span class="name">Tomatoes</span>
+                        </button>
+                        <button @click="selectPlant('Cucumbers')" class="plant-button">
+                            <span class="emoji">🥒</span>
+                            <span class="name">Cucumbers</span>
+                        </button>
+                        <button @click="selectPlant('Pumpkins')" class="plant-button">
+                            <span class="emoji">🎃</span>
+                            <span class="name">Pumpkins</span>
+                        </button>
+                        <button @click="selectPlant('Onions')" class="plant-button">
+                            <span class="emoji">🧅</span>
+                            <span class="name">Onions</span>
+                        </button>
+                        <button @click="selectPlant('Romaine')" class="plant-button">
+                            <span class="emoji">🥬</span>
+                            <span class="name">Romaine</span>
+                        </button>
+                        <button @click="selectPlant('SweetPotatoes')" class="plant-button">
+                            <span class="emoji">🍠</span>
+                            <span class="name">Sweet Potatoes</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div x-show="selectedPlant" class="plant-info">
+                    <button @click="selectedPlant = null" class="back-button">← Back to Plants</button>
+                    <div x-html="plantContent" class="markdown-content"></div>
                 </div>
             </div>
 
-            <div x-show="selectedPlant" class="plant-info">
-                <button @click="selectedPlant = null" class="back-button">← Back to Plants</button>
-                <div x-html="plantContent" class="markdown-content"></div>
+            <!-- Plot Layout Template -->
+            <div x-show="currentView === 'plot'" class="plot-layout">
+                <h2>Garden Plot Layout</h2>
+                <div class="plot-container">
+                    <div class="plot-grid">
+                        <!-- Grid will be created here -->
+                        <p>10' x 20' garden plot with 1' grid lines</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Planting Schedule Template -->
+            <div x-show="currentView === 'schedule'" class="planting-schedule">
+                <h2>Planting Schedule</h2>
+                <p>Planting schedule will be implemented here.</p>
             </div>
         </main>
     </div>
