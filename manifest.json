@@ -1,16 +1,37 @@
 {
   "name": "O'Connor Garden Guide",
   "short_name": "Garden Guide",
-  "description": "Information about growing plants in Minot, North Dakota",
-  "start_url": "./",
+  "description": "Your personal assistant for garden planning and maintenance",
+  "start_url": "./index-modular.html",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#4CAF50",
   "orientation": "any",
+  "lang": "en-US",
+  "dir": "ltr",
+  "scope": "./",
+  "prefer_related_applications": false,
   "categories": [
     "garden",
     "plants",
-    "agriculture"
+    "agriculture",
+    "productivity"
+  ],
+  "screenshots": [
+    {
+      "src": "screenshots/dashboard.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "platform": "wide",
+      "label": "Dashboard view of Garden Guide"
+    },
+    {
+      "src": "screenshots/plants.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "platform": "wide",
+      "label": "Plant catalog in Garden Guide"
+    }
   ],
   "icons": [
     {

@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Garden Guide - Your personal assistant for garden planning and maintenance">
+    <meta name="theme-color" content="#4CAF50">
+    
+    <title>Garden Guide</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" href="icons/favicon.svg" type="image/svg+xml">
+    
+    <!-- PWA manifest -->
+    <link rel="manifest" href="manifest.json">
+    
+    <!-- Apple touch icon -->
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="styles.css">
+    
+    <!-- Alpine.js -->
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    
+    <!-- Markdown parser -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    
+    <!-- Firebase config -->
+    <script>
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyDQPFJzxrKHLZXUmrZL-KPUTCXQGOQECw8",
+            authDomain: "oconnorgarden25.firebaseapp.com",
+            projectId: "oconnorgarden25",
+            storageBucket: "oconnorgarden25.appspot.com",
+            messagingSenderId: "1051481601384",
+            appId: "1:1051481601384:web:a4e9a0d0c0b0f0f0c0b0f0"
+        };
+        
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+    </script>
+</head>
+<body>
+    <div x-data="gardenApp" x-init="init()" class="app-container">
+        <!-- Loading screen -->
+        <div x-show="isLoading" class="loading-screen">
+            <div class="spinner"></div>
+            <p>Loading Garden Guide...</p>
+        </div>
+        
+        <!-- Error message -->
+        <div x-show="error" class="error-message">
+            <p x-text="error"></p>
+            <button @click="error = null">Dismiss</button>
+        </div>
+        
+        <!-- App shell -->
+        <div x-show="!isLoading && !error" class="app-shell">
+            <!-- Header -->
+            <header class="app-header">
+                <div class="logo">
+                    <img src="icons/favicon.svg" alt="Garden Guide Logo">
+                    <h1>Garden Guide</h1>
+                </div>
+                
+                <nav class="main-nav">
+                    <button 
+                        @click="navigateTo('dashboard')" 
+                        :class="{ active: isViewActive('dashboard') }"
+                        x-show="authService.isAuthenticated()">
+                        Dashboard
+                    </button>
+                    <button 
+                        @click="navigateTo('plants')" 
+                        :class="{ active: isViewActive('plants') }"
+                        x-show="authService.isAuthenticated()">
+                        Plants
+                    </button>
+                    <button 
+                        @click="navigateTo('plots')" 
+                        :class="{ active: isViewActive('plots') }"
+                        x-show="authService.isAuthenticated()">
+                        Garden Plots
+                    </button>
+                    <button 
+                        @click="navigateTo('tasks')" 
+                        :class="{ active: isViewActive('tasks') }"
+                        x-show="authService.isAuthenticated()">
+                        Tasks
+                    </button>
+                </nav>
+                
+                <div class="user-menu" x-show="authService.isAuthenticated()">
+                    <span x-text="authService.getCurrentUser()?.email"></span>
+                    <button @click="signOut()">Sign Out</button>
+                </div>
+            </header>
+            
+            <!-- Main content -->
+            <main class="app-content">
+                <!-- Login view -->
+                <section x-show="isViewActive('login')" class="view login-view">
+                    <div x-data="{ email: '', password: '', error: null }">
+                        <h2>Sign In</h2>
+                        
+                        <div x-show="error" class="error-message" x-text="error"></div>
+                        
+                        <form @submit.prevent="authService.signIn(email, password).catch(err => error = err.message)">
+                            <div class="form-group">
+                                <label for="email">Email</label>
+                                <input type="email" id="email" x-model="email" required>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="password">Password</label>
+                                <input type="password" id="password" x-model="password" required>
+                            </div>
+                            
+                            <button type="submit">Sign In</button>
+                        </form>
+                        
+                        <div class="auth-options">
+                            <button @click="authService.signInWithGoogle()">Sign in with Google</button>
+                            <p>Don't have an account? <a href="#" @click.prevent="navigateTo('register')">Register</a></p>
+                        </div>
+                    </div>
+                </section>
+                
+                <!-- Register view -->
+                <section x-show="isViewActive('register')" class="view register-view">
+                    <div x-data="{ email: '', password: '', confirmPassword: '', error: null }">
+                        <h2>Create Account</h2>
+                        
+                        <div x-show="error" class="error-message" x-text="error"></div>
+                        
+                        <form @submit.prevent="password === confirmPassword ? authService.register(email, password).catch(err => error = err.message) : error = 'Passwords do not match'">
+                            <div class="form-group">
+                                <label for="reg-email">Email</label>
+                                <input type="email" id="reg-email" x-model="email" required>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="reg-password">Password</label>
+                                <input type="password" id="reg-password" x-model="password" required>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="confirm-password">Confirm Password</label>
+                                <input type="password" id="confirm-password" x-model="confirmPassword" required>
+                            </div>
+                            
+                            <button type="submit">Register</button>
+                        </form>
+                        
+                        <div class="auth-options">
+                            <p>Already have an account? <a href="#" @click.prevent="navigateTo('login')">Sign In</a></p>
+                        </div>
+                    </div>
+                </section>
+                
+                <!-- Dashboard view -->
+                <section x-show="isViewActive('dashboard')" class="view dashboard-view">
+                    <h2>Dashboard</h2>
+                    
+                    <div class="dashboard-grid">
+                        <div class="dashboard-card">
+                            <h3>Upcoming Tasks</h3>
+                            <div x-data="taskManager" x-init="init()">
+                                <div x-show="isLoading" class="loading">Loading tasks...</div>
+                                <div x-show="!isLoading && filteredTasks.length === 0" class="empty-state">
+                                    No upcoming tasks
+                                </div>
+                                <ul x-show="!isLoading && filteredTasks.length > 0" class="task-list">
+                                    <template x-for="task in filteredTasks.slice(0, 5)" :key="task.id">
+                                        <li class="task-item">
+                                            <span x-text="task.title"></span>
+                                            <span class="task-due-date" x-text="new Date(task.dueDate).toLocaleDateString()"></span>
+                                        </li>
+                                    </template>
+                                </ul>
+                                <button @click="navigateTo('tasks')" class="view-all-btn">View All Tasks</button>
+                            </div>
+                        </div>
+                        
+                        <div class="dashboard-card">
+                            <h3>Garden Plots</h3>
+                            <div x-data="plotManager" x-init="init()">
+                                <div x-show="isLoading" class="loading">Loading plots...</div>
+                                <div x-show="!isLoading && plots.length === 0" class="empty-state">
+                                    No garden plots yet
+                                </div>
+                                <ul x-show="!isLoading && plots.length > 0" class="plot-list">
+                                    <template x-for="plot in plots" :key="plot.id">
+                                        <li class="plot-item">
+                                            <span x-text="plot.name"></span>
+                                            <span class="plot-size" x-text="`${plot.width}x${plot.height}`"></span>
+                                        </li>
+                                    </template>
+                                </ul>
+                                <button @click="navigateTo('plots')" class="view-all-btn">View All Plots</button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+                
+                <!-- Plants view -->
+                <section x-show="isViewActive('plants')" class="view plants-view">
+                    <div x-data="plantList" x-init="init()">
+                        <!-- Plant list implementation -->
+                        <h2>Plants</h2>
+                        <!-- Plant list content here -->
+                    </div>
+                </section>
+                
+                <!-- Plots view -->
+                <section x-show="isViewActive('plots')" class="view plots-view">
+                    <div x-data="plotManager" x-init="init()">
+                        <!-- Plot manager implementation -->
+                        <h2>Garden Plots</h2>
+                        <!-- Plot manager content here -->
+                    </div>
+                </section>
+                
+                <!-- Tasks view -->
+                <section x-show="isViewActive('tasks')" class="view tasks-view">
+                    <div x-data="taskManager" x-init="init()">
+                        <!-- Task manager implementation -->
+                        <h2>Tasks</h2>
+                        <!-- Task manager content here -->
+                    </div>
+                </section>
+            </main>
+            
+            <!-- Footer -->
+            <footer class="app-footer">
+                <p>&copy; 2023 Garden Guide</p>
+            </footer>
+        </div>
+    </div>
+    
+    <!-- App scripts -->
+    <script src="services/auth-service.js" type="module"></script>
+    <script src="services/indexed-db-service.js" type="module"></script>
+    <script src="services/data-service.js" type="module"></script>
+    <script src="services/sync-service.js" type="module"></script>
+    <script src="services/notification-service.js" type="module"></script>
+    
+    <!-- Module scripts -->
+    <script src="modules/plants/plant-model.js" type="module"></script>
+    <script src="modules/plants/plant-service.js" type="module"></script>
+    <script src="modules/plants/plant-list.js" type="module"></script>
+    <script src="modules/plants/plant-detail.js" type="module"></script>
+    
+    <script src="modules/plot/plot-model.js" type="module"></script>
+    <script src="modules/plot/plot-service.js" type="module"></script>
+    <script src="modules/plot/planting-service.js" type="module"></script>
+    <script src="modules/plot/plot-manager.js" type="module"></script>
+    
+    <script src="modules/tasks/task-model.js" type="module"></script>
+    <script src="modules/tasks/task-service.js" type="module"></script>
+    <script src="modules/tasks/task-scheduler.js" type="module"></script>
+    <script src="modules/tasks/task-manager.js" type="module"></script>
+    
+    <!-- Main app script -->
+    <script src="app-modular.js" type="module"></script>
+    
+    <!-- Service worker registration -->
+    <script>
+        // Register service worker for PWA
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(reg => console.log('Service worker registered'))
+                    .catch(err => console.log('Service worker registration failed', err));
+            });
+        }
+    </script>
+</body>
+</html>
